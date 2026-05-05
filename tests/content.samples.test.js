@@ -199,6 +199,38 @@ test('all-products-grid sample: eligible cards get one correct badge each', asyn
 
 });
 
+test('all-products-grid sample: filter modes hide and reveal cards by cpp', async () => {
+  const dom = await loadSampleDom('telstraplus-all-products-grid.html', '/rewards/explore/all-products');
+  const { document } = dom.window;
+
+  await runContentScript(dom);
+
+  const cards = Array.from(document.querySelectorAll(CARD_SELECTOR));
+  const badges = cards.filter(card => getCardOwnedBadges(card).length > 0);
+  assert.ok(badges.length > 0, 'expected at least one annotated card for filtering');
+
+  assert.equal(typeof dom.window.setFilterMode, 'function', 'expected filter mode API to exist');
+
+  dom.window.setFilterMode('excellent');
+
+  const hiddenAfterExcellent = cards.filter(card => card.classList.contains('tph-filter-hidden')).length;
+  assert.ok(hiddenAfterExcellent > 0, 'excellent filter should hide lower-value cards');
+
+  const visibleExcellentBadges = cards
+    .filter(card => getCardOwnedBadges(card).length > 0)
+    .filter(card => !card.classList.contains('tph-filter-hidden'));
+  assert.ok(visibleExcellentBadges.length > 0, 'excellent filter should keep at least one visible card');
+
+  for (const card of visibleExcellentBadges) {
+    const cpp = Number(card.dataset.tphCpp || '0');
+    assert.ok(cpp >= 0.30, 'visible card under excellent filter should be >= 0.30 cpp');
+  }
+
+  dom.window.setFilterMode('all');
+  const hiddenAfterAll = cards.filter(card => card.classList.contains('tph-filter-hidden')).length;
+  assert.equal(hiddenAfterAll, 0, 'all filter should show all cards again');
+});
+
 test('product-page sample shell: no false-positive product badge', async () => {
   const dom = await loadSampleDom('telstraplus-product-page.html', '/rewards/explore/sample-product');
   await runContentScript(dom);

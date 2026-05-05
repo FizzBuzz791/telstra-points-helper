@@ -38,6 +38,7 @@ The extension is now active on Telstra Rewards pages.
 - Automatically detects Telstra Plus Rewards product pages (grid and detail views)
 - Extracts points required and cash value from product text
 - Calculates cpp and displays a color-coded badge on each product
+- Adds a lightweight filter bar on catalogue pages (All, Scored, >=0.25, >=0.30)
 - Works on grid pages, product detail pages, and gift cards
 - Handles SPA navigation and page refreshes
 

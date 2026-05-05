@@ -6,6 +6,148 @@ const TITLE_GIFT_CARD_REGEX = /\$([\d,]+(?:\.\d{1,2})?)\s*e?gift card/i;
 const SPEC_GIFT_CARD_REGEX = /gift card amount:\s*\$([\d,]+(?:\.\d{1,2})?)/i;
 
 const seenCards = new WeakSet();
+const FILTER_MODE_KEY = "tphFilterMode";
+const FILTER_MODES = {
+  all: {
+    label: "All",
+    include: () => true
+  },
+  scored: {
+    label: "Scored",
+    include: cpp => Number.isFinite(cpp)
+  },
+  good: {
+    label: ">= 0.25",
+    include: cpp => Number.isFinite(cpp) && cpp >= 0.25
+  },
+  excellent: {
+    label: ">= 0.30",
+    include: cpp => Number.isFinite(cpp) && cpp >= 0.30
+  }
+};
+
+let filterMode = loadFilterMode();
+
+function isCataloguePage() {
+  return isRewardsPage() && !isProductPage();
+}
+
+function loadFilterMode() {
+  try {
+    const stored = window.localStorage.getItem(FILTER_MODE_KEY);
+    return stored && FILTER_MODES[stored] ? stored : "all";
+  } catch {
+    return "all";
+  }
+}
+
+function saveFilterMode(mode) {
+  try {
+    window.localStorage.setItem(FILTER_MODE_KEY, mode);
+  } catch {
+    // Ignore storage access errors.
+  }
+}
+
+function readCardCpp(card) {
+  const raw = card.dataset.tphCpp;
+  if (!raw) return null;
+
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function hydrateCardMetricsFromBadge(card) {
+  if (card.dataset.tphCpp) return;
+
+  const badge = card.querySelector(".tph-wrapper .tph-badge");
+  if (!badge) return;
+
+  const cppMatch = (badge.textContent || "").match(/(\d+(?:\.\d+)?)\s*cpp/i);
+  if (cppMatch) {
+    card.dataset.tphCpp = cppMatch[1];
+  }
+}
+
+function applyFilterToCard(card) {
+  if (!isCataloguePage()) {
+    card.classList.remove("tph-filter-hidden");
+    return;
+  }
+
+  hydrateCardMetricsFromBadge(card);
+
+  const cpp = readCardCpp(card);
+  const include = FILTER_MODES[filterMode].include(cpp);
+  card.classList.toggle("tph-filter-hidden", !include);
+}
+
+function applyFilterToAllCards(root = document) {
+  if (!isCataloguePage()) return;
+
+  if (root instanceof HTMLElement && root.matches(CARD_SELECTOR)) {
+    applyFilterToCard(root);
+  }
+
+  root.querySelectorAll?.(CARD_SELECTOR).forEach(applyFilterToCard);
+}
+
+function getFilterBar() {
+  return document.querySelector(".tph-filter-bar");
+}
+
+function syncFilterButtons() {
+  const bar = getFilterBar();
+  if (!bar) return;
+
+  bar.querySelectorAll("button[data-filter-mode]").forEach(button => {
+    button.classList.toggle("tph-active", button.dataset.filterMode === filterMode);
+  });
+}
+
+function setFilterMode(mode) {
+  if (!FILTER_MODES[mode]) return;
+
+  filterMode = mode;
+  saveFilterMode(mode);
+  syncFilterButtons();
+  applyFilterToAllCards(document);
+}
+
+function ensureFilterBar() {
+  if (!isCataloguePage()) {
+    getFilterBar()?.remove();
+    return;
+  }
+
+  let bar = getFilterBar();
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.className = "tph-filter-bar";
+    bar.innerHTML = `
+      <span class="tph-filter-label">Filter</span>
+      ${Object.entries(FILTER_MODES)
+        .map(([mode, config]) => `<button type="button" data-filter-mode="${mode}">${config.label}</button>`)
+        .join("")}
+    `;
+
+    bar.addEventListener("click", event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const button = target.closest("button[data-filter-mode]");
+      if (!button) return;
+
+      setFilterMode(button.dataset.filterMode || "all");
+    });
+
+    document.body.appendChild(bar);
+  }
+
+  syncFilterButtons();
+}
+
+window.setFilterMode = setFilterMode;
 
 function isRewardsPage() {
   return window.location.pathname.startsWith("/rewards/");
@@ -48,7 +190,10 @@ function createBadge(points, cash, extraClass = "") {
  */
 function annotateCatalogueCard(card) {
   if (!isRewardsPage()) return;
-  if (seenCards.has(card) || card.querySelector(".tph-wrapper")) return;
+  if (seenCards.has(card) || card.querySelector(".tph-wrapper")) {
+    applyFilterToCard(card);
+    return;
+  }
 
   const text = card.textContent || "";
   const points = firstMatch(text, POINTS_REGEX);
@@ -57,6 +202,9 @@ function annotateCatalogueCard(card) {
   if (!points || !cash) return;
 
   seenCards.add(card);
+  card.dataset.tphPoints = String(points);
+  card.dataset.tphCash = String(cash);
+  card.dataset.tphCpp = ((cash / points) * 100).toFixed(4);
 
   const pointsNode = findSmallestElementContaining(card, POINTS_REGEX);
   const badge = createBadge(points, cash);
@@ -66,13 +214,18 @@ function annotateCatalogueCard(card) {
   } else {
     card.appendChild(badge);
   }
+
+  applyFilterToCard(card);
 }
 
 /**
  * Product detail pages
  */
 function isProductPage() {
-  return /^\/rewards\/explore\/[^/]+/.test(window.location.pathname);
+  if (!/^\/rewards\/explore\/[^/]+/.test(window.location.pathname)) return false;
+
+  // Catalogue/list routes include product tiles; PDP routes do not.
+  return !document.querySelector(CARD_SELECTOR);
 }
 
 function getProductCashValue(text) {
@@ -155,11 +308,14 @@ function annotateProductPage() {
 function scanCatalogue(root = document) {
   if (!isRewardsPage()) return;
 
+  ensureFilterBar();
+
   if (root instanceof HTMLElement && root.matches(CARD_SELECTOR)) {
     annotateCatalogueCard(root);
   }
 
   root.querySelectorAll?.(CARD_SELECTOR).forEach(annotateCatalogueCard);
+  applyFilterToAllCards(root);
 }
 
 function scan(root = document) {
@@ -271,6 +427,10 @@ function onUrlChange() {
 
   // Clear product-page badges when moving between PDP/grid.
   document.querySelectorAll(".tph-product-badge").forEach(el => el.remove());
+  ensureFilterBar();
+  if (!isCataloguePage()) {
+    applyFilterToAllCards(document);
+  }
 
   scheduleRetryScans();
 }

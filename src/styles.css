@@ -36,3 +36,46 @@
 .tph-poor .tph-badge {
   color: #8a1f11;
 }
+
+.tph-filter-bar {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.tph-filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+}
+
+.tph-filter-bar button {
+  border: 1px solid #b9b9b9;
+  border-radius: 999px;
+  background: #fff;
+  color: #222;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tph-filter-bar button.tph-active {
+  border-color: #0a7a2f;
+  color: #0a7a2f;
+  background: #eef9f1;
+}
+
+.tph-filter-hidden {
+  display: none !important;
+}
