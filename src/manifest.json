@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Telstra Points Helper",
+    "version": "1.0.0",
+    "description": "Shows cents-per-point value on Telstra Plus Rewards product cards.",
+    "host_permissions": [
+        "https://plus.telstra.com.au/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://plus.telstra.com.au/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "styles.css"
+            ],
+            "run_at": "document_idle"
+        }
+    ]
+}

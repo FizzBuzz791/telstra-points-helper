@@ -1,0 +1,38 @@
+.tph-wrapper {
+  margin: 8px 0 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tph-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid currentColor;
+  background: white;
+}
+
+.tph-detail {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.tph-excellent .tph-badge {
+  color: #0a7a2f;
+}
+
+.tph-good .tph-badge {
+  color: #277000;
+}
+
+.tph-ok .tph-badge {
+  color: #8a5a00;
+}
+
+.tph-poor .tph-badge {
+  color: #8a1f11;
+}
