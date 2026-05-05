@@ -30,7 +30,7 @@ const SNAPSHOT_TARGETS = [
   },
   {
     id: "gift-card-page",
-    url: "https://plus.telstra.com.au/rewards/explore/25530",
+    url: "https://plus.telstra.com.au/rewards/explore/24785",
     viewport: { width: 1440, height: 1800 }
   }
 ];
@@ -47,7 +47,10 @@ async function waitForTargetContent(page, targetId) {
   await page.waitForFunction(() => {
     const bodyText = document.body?.innerText || "";
     const hasPoints = /\b[\d,]+\s*pts\b/i.test(bodyText);
-    const hasCash = /\bor\s*\$[\d,]+(?:\.\d{1,2})?\b/i.test(bodyText);
+    const hasCash =
+      /\bor\s*\$[\d,]+(?:\.\d{1,2})?\b/i.test(bodyText) ||
+      /gift card amount:\s*\$[\d,]+(?:\.\d{1,2})?/i.test(bodyText) ||
+      /\$[\d,]+(?:\.\d{1,2})?\s*e?gift card/i.test(bodyText);
     return hasPoints && hasCash;
   }, { timeout: 30_000 });
 }
