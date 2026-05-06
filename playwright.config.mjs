@@ -16,13 +16,20 @@ function resolveBrowserPath() {
 }
 
 const executablePath = resolveBrowserPath();
+const isCI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: "tests",
   testMatch: "**/*.test.mjs",
   timeout: 90_000,
+  outputDir: isCI ? "test-results" : "/tmp/telstra-points-helper-playwright-output",
+  lastRunFile: isCI
+    ? "test-results/.last-run.json"
+    : "/tmp/telstra-points-helper.playwright.last-run.json",
 
-  reporter: [["html", { open: "on-failure" }]],
+  reporter: isCI
+    ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
+    : [["list"], ["html", { outputFolder: "/tmp/telstra-points-helper-playwright-report", open: "on-failure" }]],
 
   snapshotDir: "tests/visual-snapshots",
   snapshotPathTemplate: "{snapshotDir}/{arg}{ext}",

@@ -12,6 +12,10 @@ const CONTENT_STYLE_PATH = path.join(ROOT, "src", "styles.css");
 
 let contentScript;
 let contentStyle;
+const SCREENSHOT_OPTIONS = {
+  fullPage: false,
+  maxDiffPixelRatio: 0.0001
+};
 
 test.beforeAll(async () => {
   [contentScript, contentStyle] = await Promise.all([
@@ -70,7 +74,7 @@ test("all-products-grid: badges appear on product tiles", async ({ page }) => {
     .poll(() => page.locator(".tph-wrapper").count(), { timeout: 60_000 })
     .toBeGreaterThan(0);
 
-  await expect(page).toHaveScreenshot("all-products-grid.png", { fullPage: false });
+  await expect(page).toHaveScreenshot("all-products-grid.png", SCREENSHOT_OPTIONS);
 });
 
 test("product-page: shows exactly one product badge", async ({ page }) => {
@@ -86,7 +90,7 @@ test("product-page: shows exactly one product badge", async ({ page }) => {
   const badgeCount = await page.$$eval(".tph-product-badge", els => els.length);
   expect(badgeCount).toBe(1);
 
-  await expect(page).toHaveScreenshot("product-page.png", { fullPage: false });
+  await expect(page).toHaveScreenshot("product-page.png", SCREENSHOT_OPTIONS);
 });
 
 test("product-page-with-offer: shows exactly one product badge", async ({ page }) => {
@@ -102,7 +106,7 @@ test("product-page-with-offer: shows exactly one product badge", async ({ page }
   const badgeCount = await page.$$eval(".tph-product-badge", els => els.length);
   expect(badgeCount).toBe(1);
 
-  await expect(page).toHaveScreenshot("product-page-with-offer.png", { fullPage: false });
+  await expect(page).toHaveScreenshot("product-page-with-offer.png", SCREENSHOT_OPTIONS);
 });
 
 test("gift-card-page: shows exactly one badge with valid cpp text", async ({ page }) => {
@@ -121,5 +125,5 @@ test("gift-card-page: shows exactly one badge with valid cpp text", async ({ pag
   const badgeText = await page.$eval(".tph-product-badge .tph-badge", el => el.textContent.trim());
   expect(badgeText).toMatch(/^\d+\.\d{2}\s+cpp$/);
 
-  await expect(page).toHaveScreenshot("gift-card-page.png", { fullPage: false });
+  await expect(page).toHaveScreenshot("gift-card-page.png", SCREENSHOT_OPTIONS);
 });
