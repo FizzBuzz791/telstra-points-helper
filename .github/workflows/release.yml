@@ -1,0 +1,54 @@
+name: Release on manifest update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/manifest.json'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Extract version from manifest.json
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' src/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Check if release tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create src zip archive
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          cd src
+          zip -r ../telstra-points-helper-${{ steps.version.outputs.version }}.zip .
+          cd ..
+
+      - name: Create release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          files: telstra-points-helper-${{ steps.version.outputs.version }}.zip
+          body: |
+            Automated release for Telstra Points Helper v${{ steps.version.outputs.version }}
